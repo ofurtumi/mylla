@@ -4,14 +4,21 @@
 
 @layer utilities {
 	.x-square {
-		background-image: url('/x.svg');
+		background-image: url('/X.svg');
 		background-size: 85%;
 		background-repeat: no-repeat;
 		background-position: center;
 	}
 
 	.o-square {
-		background-image: url('/o.svg');
+		background-image: url('/O.svg');
+		background-size: 85%;
+		background-repeat: no-repeat;
+		background-position: center;
+	}
+
+	.draw-square {
+		background-image: url('/XO.svg');
 		background-size: 85%;
 		background-repeat: no-repeat;
 		background-position: center;

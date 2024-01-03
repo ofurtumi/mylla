@@ -8,7 +8,6 @@
 	let current_player = SQUARE_STATE.X;
 	let winner: BOARD_STATE;
 	let available: number[];
-	$: current_player, get_winner(boards);
 
 	let X = 0;
 	let O = 0;
@@ -74,8 +73,10 @@
 
 <header class="flex justify-between p-2">
 	<h1>OFURMYLLA</h1>
-	<button class="border border-black" class:hidden={winner === BOARD_STATE.PLAYING} on:click={reset}
-		>Nýr leikur</button
+	<button
+		class="border border-black p-2 text-lg"
+		class:hidden={winner === BOARD_STATE.PLAYING}
+		on:click={reset}>Nýr leikur</button
 	>
 </header>
 
@@ -91,6 +92,7 @@
 				class="grid grid-cols-3 grid-rows-3 gap-1 place-items-center rounded-lg p-2 game"
 				class:x-square={board.state === BOARD_STATE.X_WON}
 				class:o-square={board.state === BOARD_STATE.O_WON}
+				class:draw-square={board.state === BOARD_STATE.DRAW}
 				class:pointer-events-none={!available.includes(i)}
 				class:bg-gray-300={!available.includes(i)}
 			>
@@ -100,6 +102,7 @@
 							{value}
 							select={() => {
 								select_square(i, j);
+								get_winner(boards);
 								get_available(j);
 							}}
 						/>
@@ -107,8 +110,6 @@
 				{/if}
 			</section>
 		{/each}
-	{:else}
-		<button on:click={reset}>Nýr leikur</button>
 	{/if}
 </main>
 
