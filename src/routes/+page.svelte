@@ -4,15 +4,16 @@
 	import { BOARD_STATE, SQUARE_STATE, type IBOARD } from '$lib/types';
 	import { get_results } from '$lib/utils';
 
+	let boards: IBOARD[];
 	let current_player = SQUARE_STATE.X;
-	let winner = BOARD_STATE.PLAYING;
-	let available = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+	let winner: BOARD_STATE;
+	let available: number[];
 	$: current_player, get_winner(boards);
 
 	let X = 0;
 	let O = 0;
 
-	let boards: IBOARD[] = new Array(9).fill(null).map(() => {
+	const empty_board = () => {
 		return {
 			state: BOARD_STATE.PLAYING,
 			squares: [
@@ -27,7 +28,13 @@
 				SQUARE_STATE.E
 			]
 		};
-	});
+	};
+
+	const reset = () => {
+		boards = new Array(9).fill(null).map(empty_board);
+		winner = BOARD_STATE.PLAYING;
+		available = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+	};
 
 	const get_winner = (boards: IBOARD[]) => {
 		boards.forEach((board) => {
@@ -60,31 +67,20 @@
 			return;
 		}
 		available = [square];
-		console.log(available);
 	};
 
-	const reset = () => {
-		boards.map(() => {
-			return {
-				state: BOARD_STATE.PLAYING,
-				squares: [
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E,
-					SQUARE_STATE.E
-				]
-			};
-		});
-	};
+	reset();
 </script>
 
+<header class="flex justify-between p-2">
+	<h1>OFURMYLLA</h1>
+	<button class="border border-black" class:hidden={winner === BOARD_STATE.PLAYING} on:click={reset}
+		>Nýr leikur</button
+	>
+</header>
+
 <main
-	class="grid grid-cols-3 grid-rows-3 aspect-square gap-2 w-full"
+	class="grid grid-cols-3 grid-rows-3 aspect-square gap-2 w-full max-w-3xl mx-auto"
 	class:x-square={winner === BOARD_STATE.X_WON}
 	class:o-square={winner === BOARD_STATE.O_WON}
 	class:draw-square={winner === BOARD_STATE.DRAW}
@@ -115,3 +111,16 @@
 		<button on:click={reset}>Nýr leikur</button>
 	{/if}
 </main>
+
+<footer class="p-2">
+	<h1 class="text-center border-b border-black text-lg">
+		{current_player === SQUARE_STATE.X ? 'X' : 'O'} á leik
+	</h1>
+	<div class="flex justify-center gap-4 items-center">
+		<h2>Staðan</h2>
+		<div>
+			<h3>X: {X} stig</h3>
+			<h3>O: {O} stig</h3>
+		</div>
+	</div>
+</footer>
