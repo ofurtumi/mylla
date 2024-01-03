@@ -125,3 +125,7 @@
 		</div>
 	</div>
 </footer>
+
+<img src="/O.svg" hidden alt="Pre loading the O token" />
+<img src="/X.svg" hidden alt="Pre loading the X token" />
+<img src="/XO.svg" hidden alt="Pre loading the draw token" />
