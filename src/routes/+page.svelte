@@ -1,8 +1,9 @@
 <script lang="ts">
 	import '../app.css';
+	import { set_game, create_game, unsub, get_game, add_o_user } from '$lib/db';
 	import Square from 'cmp/Square.svelte';
-	import { BOARD_STATE, SQUARE_STATE, type IBOARD } from '$lib/types';
-	import { get_results } from '$lib/utils';
+	import { BOARD_STATE, SQUARE_STATE, type IBOARD, type DB_RESPONSE } from '$lib/types';
+	import { get_results, prep_game, parse_board } from '$lib/utils';
 
 	let boards: IBOARD[];
 	let current_player = SQUARE_STATE.X;
@@ -68,6 +69,91 @@
 		available = [square];
 	};
 
+	let game_id: string;
+	let this_user: string;
+	let x_username: string;
+	let o_username: string;
+
+	const send_game = () => {
+		const prepped_game = {
+			...prep_game(
+				boards,
+				current_player,
+				available,
+				{ name: x_username, score: X },
+				{ name: o_username, score: O }
+			)
+		};
+		set_game(prepped_game, game_id);
+	};
+
+	const make_game = async () => {
+		if (!this_user) {
+			alert('Vinsamlegast skráðu notendanafn');
+			return;
+		}
+
+		const new_game = await create_game({
+			...prep_game(
+				boards,
+				current_player,
+				available,
+				{ name: this_user, score: X },
+				{ name: '', score: O }
+			)
+		});
+
+		if (new_game && new_game.id) {
+			console.log(new_game);
+			game_id = new_game.id;
+			unsub(game_id, refresh);
+		}
+	};
+
+	const join_game = async () => {
+		if (!this_user) {
+			alert('Vinsamlegast skráðu notendanafn');
+			return;
+		}
+		if (!game_id) {
+			alert('Vinsamlegast skráðu leik');
+			return;
+		}
+		const response = await get_game(game_id);
+
+		if (!response.success || !response.game?.user_x) {
+			alert('Leikur fannst ekki');
+			return;
+		} else if (response.game?.user_o) {
+			alert('Leikur er tekinn');
+			return;
+		}
+
+		add_o_user(game_id, this_user);
+
+		if (response && response.id) {
+			x_username = response.game?.user_x ?? '';
+			o_username = this_user;
+			game_id = response.id;
+			unsub(game_id, refresh);
+		}
+	};
+
+	const refresh = (game: DB_RESPONSE) => {
+		if (game.success && game.game) {
+			const parsed_game = parse_board(game.game);
+			boards = parsed_game.boards;
+			current_player = parsed_game.move as SQUARE_STATE;
+			available = parsed_game.available;
+			X = parsed_game.x.score;
+			O = parsed_game.o.score;
+			x_username = parsed_game.x.name;
+			o_username = parsed_game.o.name;
+			console.log(game.game);
+			get_winner(boards);
+		}
+	};
+
 	reset();
 </script>
 
@@ -101,9 +187,17 @@
 						<Square
 							{value}
 							select={() => {
-								select_square(i, j);
-								get_winner(boards);
-								get_available(j);
+								if (
+									(this_user === x_username && current_player === SQUARE_STATE.X) ||
+									(this_user === o_username && current_player === SQUARE_STATE.O)
+								) {
+									select_square(i, j);
+									get_winner(boards);
+									get_available(j);
+									if (game_id) {
+										send_game();
+									}
+								}
 							}}
 						/>
 					{/each}
@@ -113,17 +207,49 @@
 	{/if}
 </main>
 
-<footer class="p-2">
-	<h1 class="text-center border-b border-black text-lg">
-		{current_player === SQUARE_STATE.X ? 'X' : 'O'} á leik
-	</h1>
-	<div class="flex justify-center gap-4 items-center">
-		<h2>Staðan</h2>
-		<div>
-			<h3>X: {X} stig</h3>
-			<h3>O: {O} stig</h3>
+<footer class="p-2 grid grid-cols-2 gap-4 justify-items-center border-t border-black">
+	<div class="flex flex-col">
+		<h1 class="font-bold text-xl">
+			{current_player === SQUARE_STATE.X ? 'X' : 'O'} á leik
+		</h1>
+		<h2>X: {X} stig</h2>
+		<h2>O: {O} stig</h2>
+	</div>
+	<div class="flex justify-center flex-col gap-2">
+		<div class="flex flex-col gap-1">
+			<input
+				class="p-1 border border-black disabled:bg-gray-300 text-sm rounded-xl"
+				placeholder="Notendanafn"
+				type="text"
+				bind:value={this_user}
+			/>
+			<button
+				class="p-1 border border-black disabled:bg-gray-300 text-sm rounded-xl"
+				on:click={make_game}
+				disabled={game_id ? true : false}>Smíða leik</button
+			>
+		</div>
+		<div class="flex flex-col gap-1">
+			<input
+				type="text"
+				class="p-1 border border-black disabled:bg-gray-300 text-sm rounded-xl"
+				placeholder="Game id"
+				bind:value={game_id}
+			/>
+			<button
+				class="p-1 border border-black disabled:bg-gray-300 text-sm rounded-xl"
+				on:click={join_game}
+				disabled={game_id && this_user ? false : true}>join game</button
+			>
 		</div>
 	</div>
+	<p class="col-span-2">
+		Til að spila leik eingöngu í þessum glugga þarf ekkert að gera, til þess að spila leik yfir
+		netið þarf annar leikmaður að skrá notendanafn og smella á <span class="italic">Smíða leik</span
+		>. Næst þarf hinn spilarinn að opna glugga í annari tölvu, slá þar inn notendanafn og
+		leikjakóðann sem spilari 1 fékk úthlutað, svo er nóg að smella á
+		<span class="italic">Spila leik</span> og njóta.
+	</p>
 </footer>
 
 <img src="/O.svg" hidden alt="Pre loading the O token" />
