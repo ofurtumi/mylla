@@ -82,3 +82,16 @@ export const add_o_user = async (id: string, user_o: string): Promise<DB_RESPONS
 		return { success: false, error: e as string };
 	}
 };
+
+export const reset_game = async (id: string): Promise<void> => {
+	try {
+		const game_ref = doc(database, 'games', id);
+
+		await updateDoc(game_ref, {
+			available: '012345678',
+			state: new Array(81).fill('e').join('')
+		});
+	} catch (error) {
+		throw new Error(`Failed to reset game ${id} - error: ${error}`);
+	}
+};

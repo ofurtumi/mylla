@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import { set_game, create_game, unsub, get_game, add_o_user } from '$lib/db';
+	import { set_game, create_game, unsub, get_game, add_o_user, reset_game } from '$lib/db';
 	import Square from 'cmp/Square.svelte';
 	import { BOARD_STATE, SQUARE_STATE, type IBOARD, type DB_RESPONSE } from '$lib/types';
 	import { get_results, prep_game, parse_board } from '$lib/utils';
@@ -34,6 +34,9 @@
 		boards = new Array(9).fill(null).map(empty_board);
 		winner = BOARD_STATE.PLAYING;
 		available = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+		if (game_id) {
+			reset_game(game_id);
+		}
 	};
 
 	const get_winner = (boards: IBOARD[]) => {
@@ -104,7 +107,6 @@
 		});
 
 		if (new_game && new_game.id) {
-			console.log(new_game);
 			game_id = new_game.id;
 			unsub(game_id, refresh);
 		}
@@ -130,7 +132,6 @@
 		}
 
 		add_o_user(game_id, this_user);
-
 		if (response && response.id) {
 			x_username = response.game?.user_x ?? '';
 			o_username = this_user;
@@ -145,11 +146,13 @@
 			boards = parsed_game.boards;
 			current_player = parsed_game.move as SQUARE_STATE;
 			available = parsed_game.available;
+			if (parsed_game.x.score !== X || parsed_game.o.score !== O) {
+				winner = BOARD_STATE.PLAYING;
+			}
 			X = parsed_game.x.score;
 			O = parsed_game.o.score;
 			x_username = parsed_game.x.name;
 			o_username = parsed_game.o.name;
-			console.log(game.game);
 			get_winner(boards);
 		}
 	};
