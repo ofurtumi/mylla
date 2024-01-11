@@ -65,6 +65,8 @@
 	};
 
 	const get_available = (square: number) => {
+		if (winner !== BOARD_STATE.PLAYING) return;
+
 		if (boards[square].state !== BOARD_STATE.PLAYING) {
 			available = [0, 1, 2, 3, 4, 5, 6, 7, 8]; // all available
 			return;
